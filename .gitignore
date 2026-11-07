@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-ssr
+*.local
+.tools/node/
+.tools/git/
+*.zip
+mingit.zip
