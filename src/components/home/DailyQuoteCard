@@ -1,0 +1,108 @@
+import React, { useState } from 'react';
+import { DAILY_QUOTES, getTodayQuote } from '../../data/quotes';
+import { Sparkles, RefreshCw } from 'lucide-react';
+import WashiTape from '../common/WashiTape';
+
+export default function DailyQuoteCard() {
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(() => {
+    const todayQ = getTodayQuote();
+    return DAILY_QUOTES.findIndex((q) => q.id === todayQ.id);
+  });
+
+  const quote = DAILY_QUOTES[currentQuoteIndex] || DAILY_QUOTES[0];
+
+  const handleNextQuote = () => {
+    setCurrentQuoteIndex((prev) => (prev + 1) % DAILY_QUOTES.length);
+  };
+
+  return (
+    <div
+      className="scrapbook-card paper-kraft"
+      style={{
+        padding: '1.75rem',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        minHeight: '210px'
+      }}
+    >
+      <WashiTape variant="lavender" pattern="dots" width={85} rotation={1.5} />
+
+      <div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '0.75rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Sparkles size={16} color="var(--peach-deep)" />
+            <span
+              style={{
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                color: 'var(--text-muted)'
+              }}
+            >
+              Daily Scrapbook Thought
+            </span>
+          </div>
+
+          <button
+            onClick={handleNextQuote}
+            className="btn btn-ghost"
+            style={{ padding: '4px 8px', fontSize: '0.78rem', gap: '4px' }}
+            title="Read another gentle quote"
+          >
+            <RefreshCw size={12} />
+            <span>Next ({currentQuoteIndex + 1}/{DAILY_QUOTES.length})</span>
+          </button>
+        </div>
+
+        <blockquote
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontStyle: 'italic',
+            fontSize: '1.22rem',
+            color: 'var(--text-brown)',
+            lineHeight: '1.55',
+            margin: '0.5rem 0 1rem 0',
+            position: 'relative'
+          }}
+        >
+          “{quote.quote}”
+        </blockquote>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderTop: '1px dashed var(--border-paper)',
+          paddingTop: '0.65rem'
+        }}
+      >
+        <span className="font-hand" style={{ fontSize: '1.15rem', color: 'var(--peach-deep)' }}>
+          — {quote.author}
+        </span>
+        <span
+          className="stamp-badge"
+          style={{
+            backgroundColor: 'var(--paper-white)',
+            border: '1px solid var(--border-paper)',
+            color: 'var(--text-muted)',
+            fontSize: '0.72rem'
+          }}
+        >
+          #{quote.moodTag}
+        </span>
+      </div>
+    </div>
+  );
+}
