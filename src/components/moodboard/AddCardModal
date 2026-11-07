@@ -1,0 +1,438 @@
+import React, { useState } from 'react';
+import { CARD_TYPES } from '../../data/moodConstants';
+import WashiTape from '../common/WashiTape';
+import { X, Check, Image, Quote, Palette, StickyNote } from 'lucide-react';
+
+const IMAGE_PRESETS = [
+  {
+    name: 'Steamed Chai & Ceramic',
+    url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=700&q=80',
+    title: 'Morning Warmth'
+  },
+  {
+    name: 'Pressed Wild Ferns',
+    url: 'https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=700&q=80',
+    title: 'Botanical Keepsakes'
+  },
+  {
+    name: 'Linen Notebooks & Fountain Pen',
+    url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=700&q=80',
+    title: 'Studio Sketches'
+  },
+  {
+    name: 'Wild Florals in Ceramic Jar',
+    url: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=700&q=80',
+    title: 'Spring Blooms'
+  },
+  {
+    name: 'Golden Hour Shadows',
+    url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=700&q=80',
+    title: 'Evening Calm'
+  }
+];
+
+const COLOR_PRESETS = [
+  { name: 'Soft Lavender', hex: '#DCD0F4' },
+  { name: 'Blush Rose', hex: '#F3C8D6' },
+  { name: 'Sage Garden', hex: '#D7E5D5' },
+  { name: 'Warm Peach', hex: '#EFCBAA' },
+  { name: 'Roasted Chestnut', hex: '#543D32' },
+  { name: 'Warm Kraft', hex: '#EADBC8' },
+  { name: 'Soft Sky', hex: '#D5DFF0' }
+];
+
+const NOTE_BACKGROUNDS = [
+  { name: 'Cream', hex: '#FFF8E8' },
+  { name: 'Blush', hex: '#FDF0F4' },
+  { name: 'Sage', hex: '#F1F7F0' },
+  { name: 'Lavender', hex: '#F4F0FB' },
+  { name: 'Kraft', hex: '#F0E4D5' }
+];
+
+export default function AddCardModal({ isOpen, onClose, onAddCard }) {
+  if (!isOpen) return null;
+
+  const [cardType, setCardType] = useState('image');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [color, setColor] = useState('#DCD0F4');
+  const [noteBg, setNoteBg] = useState('#FFF8E8');
+  const [errors, setErrors] = useState({});
+
+  const handleApplyImagePreset = (preset) => {
+    setImageUrl(preset.url);
+    if (!title) setTitle(preset.title);
+  };
+
+  const handleApplyColorPreset = (preset) => {
+    setColor(preset.hex);
+    setTitle(preset.name);
+    setContent(preset.hex);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+
+    if (cardType === 'image') {
+      if (!imageUrl.trim()) newErrors.imageUrl = 'Please enter an image URL or choose a preset below';
+    } else if (cardType === 'quote') {
+      if (!content.trim()) newErrors.content = 'Please enter the quote text';
+    } else if (cardType === 'color') {
+      if (!color) newErrors.color = 'Please select a color';
+    } else if (cardType === 'note') {
+      if (!content.trim()) newErrors.content = 'Please write something for your note';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    onAddCard({
+      type: cardType,
+      title: title.trim(),
+      content: content.trim(),
+      imageUrl: cardType === 'image' ? imageUrl.trim() : null,
+      color: cardType === 'color' ? color : cardType === 'note' ? noteBg : null
+    });
+
+    onClose();
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="modal-content"
+        style={{ maxWidth: '580px' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <WashiTape variant="peach" width={100} rotation={-1.5} />
+
+        <div className="modal-header">
+          <div>
+            <h2 style={{ fontSize: '1.35rem', margin: 0 }}>Pin a New Scrapbook Card</h2>
+            <p className="font-hand" style={{ fontSize: '1.1rem', color: 'var(--peach-deep)', margin: 0 }}>
+              Choose your card style and pin it to your board
+            </p>
+          </div>
+          <button onClick={onClose} className="btn-icon btn-ghost" aria-label="Close modal">
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Card Type Tabs */}
+            <div>
+              <label className="input-label">Select Card Type</label>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '0.5rem'
+                }}
+              >
+                {[
+                  { id: 'image', label: 'Photo', icon: Image },
+                  { id: 'quote', label: 'Quote', icon: Quote },
+                  { id: 'color', label: 'Color', icon: Palette },
+                  { id: 'note', label: 'Note', icon: StickyNote }
+                ].map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = cardType === t.id;
+                  return (
+                    <button
+                      type="button"
+                      key={t.id}
+                      onClick={() => setCardType(t.id)}
+                      style={{
+                        padding: '0.65rem 0.25rem',
+                        borderRadius: 'var(--radius-sm)',
+                        backgroundColor: isSelected ? 'var(--peach-soft)' : 'var(--paper-cream)',
+                        border: isSelected ? '2px solid var(--peach-deep)' : '1px solid var(--border-paper)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        cursor: 'pointer',
+                        fontWeight: isSelected ? 700 : 500,
+                        color: isSelected ? 'var(--text-brown)' : 'var(--text-muted)'
+                      }}
+                    >
+                      <Icon size={18} />
+                      <span style={{ fontSize: '0.78rem' }}>{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* TYPE 1: IMAGE FIELDS */}
+            {cardType === 'image' && (
+              <div>
+                <label className="input-label" htmlFor="card-image-url">
+                  Image URL *
+                </label>
+                <input
+                  id="card-image-url"
+                  type="url"
+                  className="input-field"
+                  placeholder="https://images.unsplash.com/photo-..."
+                  value={imageUrl}
+                  onChange={(e) => {
+                    setImageUrl(e.target.value);
+                    if (errors.imageUrl) setErrors((prev) => ({ ...prev, imageUrl: null }));
+                  }}
+                />
+                {errors.imageUrl && (
+                  <span style={{ fontSize: '0.78rem', color: '#B83A3A', marginTop: '4px', display: 'block' }}>
+                    {errors.imageUrl}
+                  </span>
+                )}
+
+                {/* Aesthetic image presets */}
+                <div style={{ marginTop: '0.75rem' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    Or pick an aesthetic preset:
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.35rem' }}>
+                    {IMAGE_PRESETS.map((p) => (
+                      <button
+                        type="button"
+                        key={p.name}
+                        onClick={() => handleApplyImagePreset(p)}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '1rem' }}>
+                  <label className="input-label" htmlFor="card-title">
+                    Polaroid Title (optional)
+                  </label>
+                  <input
+                    id="card-title"
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. Afternoon at the studio"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ marginTop: '0.85rem' }}>
+                  <label className="input-label" htmlFor="card-content">
+                    Handwritten Caption (optional)
+                  </label>
+                  <input
+                    id="card-content"
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. Warm sunlight and soft jazz playing..."
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* TYPE 2: QUOTE FIELDS */}
+            {cardType === 'quote' && (
+              <div>
+                <label className="input-label" htmlFor="card-quote">
+                  Thought or Quote *
+                </label>
+                <textarea
+                  id="card-quote"
+                  className="textarea-field"
+                  placeholder="“There is quiet music in simple mornings...”"
+                  value={content}
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                    if (errors.content) setErrors((prev) => ({ ...prev, content: null }));
+                  }}
+                  style={{ minHeight: '90px' }}
+                />
+                {errors.content && (
+                  <span style={{ fontSize: '0.78rem', color: '#B83A3A', marginTop: '4px', display: 'block' }}>
+                    {errors.content}
+                  </span>
+                )}
+
+                <div style={{ marginTop: '0.85rem' }}>
+                  <label className="input-label" htmlFor="card-quote-author">
+                    Attribution / Author (optional)
+                  </label>
+                  <input
+                    id="card-quote-author"
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. Mindful Notes, Studio Journal..."
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* TYPE 3: COLOR SWATCH FIELDS */}
+            {cardType === 'color' && (
+              <div>
+                <label className="input-label">Pick or Enter Color *</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => {
+                      setColor(e.target.value);
+                      setContent(e.target.value);
+                    }}
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      border: '1px solid var(--border-paper)',
+                      borderRadius: 'var(--radius-xs)',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={color}
+                    onChange={(e) => {
+                      setColor(e.target.value);
+                      setContent(e.target.value);
+                    }}
+                    placeholder="#DCD0F4"
+                    style={{ fontFamily: 'monospace', maxWidth: '140px' }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    Curated palette swatches:
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
+                    {COLOR_PRESETS.map((p) => (
+                      <button
+                        type="button"
+                        key={p.name}
+                        onClick={() => handleApplyColorPreset(p)}
+                        style={{
+                          padding: '0.3rem 0.6rem',
+                          borderRadius: 'var(--radius-pill)',
+                          border: '1px solid var(--border-paper)',
+                          backgroundColor: p.hex,
+                          color: p.hex === '#543D32' ? 'white' : 'var(--text-brown)',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <span>{p.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label" htmlFor="swatch-name">
+                    Swatch Label / Name
+                  </label>
+                  <input
+                    id="swatch-name"
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. Misty Lavender, Spring Sage..."
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* TYPE 4: NOTE FIELDS */}
+            {cardType === 'note' && (
+              <div>
+                <label className="input-label">Sticky Note Paper Color</label>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {NOTE_BACKGROUNDS.map((bg) => (
+                    <button
+                      type="button"
+                      key={bg.name}
+                      onClick={() => setNoteBg(bg.hex)}
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: 'var(--radius-sm)',
+                        backgroundColor: bg.hex,
+                        border: noteBg === bg.hex ? '2px solid var(--text-brown)' : '1px solid var(--border-paper)',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {bg.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <label className="input-label" htmlFor="note-title">
+                    Note Heading (optional)
+                  </label>
+                  <input
+                    id="note-title"
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. Daily Mantra"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="input-label" htmlFor="note-content">
+                    Note Message *
+                  </label>
+                  <textarea
+                    id="note-content"
+                    className="textarea-field"
+                    placeholder="Write your sticky note thoughts here..."
+                    value={content}
+                    onChange={(e) => {
+                      setContent(e.target.value);
+                      if (errors.content) setErrors((prev) => ({ ...prev, content: null }));
+                    }}
+                    style={{ minHeight: '90px', fontFamily: 'var(--font-hand)', fontSize: '1.25rem' }}
+                  />
+                  {errors.content && (
+                    <span style={{ fontSize: '0.78rem', color: '#B83A3A', marginTop: '4px', display: 'block' }}>
+                      {errors.content}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" style={{ gap: '0.4rem' }}>
+              <Check size={16} />
+              <span>Pin Card to Board</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
