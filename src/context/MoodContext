@@ -1,0 +1,336 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { INITIAL_MOODS, INITIAL_JOURNAL_ENTRIES, INITIAL_MOODBOARDS } from '../data/initialData';
+
+const MoodContext = createContext();
+
+const STORAGE_KEYS = {
+  MOODS: 'moodspace_moods_v1',
+  JOURNAL: 'moodspace_journal_v1',
+  MOODBOARDS: 'moodspace_moodboards_v1',
+  INITIALIZED: 'moodspace_initialized_v1'
+};
+
+export const MoodProvider = ({ children }) => {
+  // 1. Moods State
+  const [moods, setMoods] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.MOODS);
+      if (saved) return JSON.parse(saved);
+      // Initialize with demo data on very first launch
+      localStorage.setItem(STORAGE_KEYS.MOODS, JSON.stringify(INITIAL_MOODS));
+      return INITIAL_MOODS;
+    } catch (e) {
+      console.error('Error loading moods from localStorage:', e);
+      return INITIAL_MOODS;
+    }
+  });
+
+  // 2. Journal Entries State
+  const [journalEntries, setJournalEntries] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.JOURNAL);
+      if (saved) return JSON.parse(saved);
+      localStorage.setItem(STORAGE_KEYS.JOURNAL, JSON.stringify(INITIAL_JOURNAL_ENTRIES));
+      return INITIAL_JOURNAL_ENTRIES;
+    } catch (e) {
+      console.error('Error loading journal from localStorage:', e);
+      return INITIAL_JOURNAL_ENTRIES;
+    }
+  });
+
+  // 3. Moodboards State
+  const [moodboards, setMoodboards] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.MOODBOARDS);
+      if (saved) return JSON.parse(saved);
+      localStorage.setItem(STORAGE_KEYS.MOODBOARDS, JSON.stringify(INITIAL_MOODBOARDS));
+      return INITIAL_MOODBOARDS;
+    } catch (e) {
+      console.error('Error loading moodboards from localStorage:', e);
+      return INITIAL_MOODBOARDS;
+    }
+  });
+
+  // Toast Notifications
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = (message, type = 'success', duration = 3500) => {
+    const id = Date.now() + Math.random().toString();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, duration);
+  };
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Confirmation Modal
+  const [confirmModalConfig, setConfirmModalConfig] = useState(null);
+
+  const confirmAction = ({ title, message, confirmText = 'Confirm', onConfirm, danger = false }) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      danger,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModalConfig(null);
+      },
+      onCancel: () => setConfirmModalConfig(null)
+    });
+  };
+
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.MOODS, JSON.stringify(moods));
+    } catch (e) {
+      console.error('Failed to save moods:', e);
+    }
+  }, [moods]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.JOURNAL, JSON.stringify(journalEntries));
+    } catch (e) {
+      console.error('Failed to save journal:', e);
+    }
+  }, [journalEntries]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.MOODBOARDS, JSON.stringify(moodboards));
+    } catch (e) {
+      console.error('Failed to save moodboards:', e);
+    }
+  }, [moodboards]);
+
+  // MOOD ACTIONS
+  const getTodayDateStr = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  const getMoodForDate = (dateStr) => {
+    return moods.find((m) => m.date === dateStr) || null;
+  };
+
+  const getTodayMood = () => {
+    return getMoodForDate(getTodayDateStr());
+  };
+
+  const saveMood = ({ mood, intensity = 3, note = '', date = null }) => {
+    const targetDate = date || getTodayDateStr();
+    const existingIndex = moods.findIndex((m) => m.date === targetDate);
+
+    let updatedList;
+    if (existingIndex >= 0) {
+      // Update existing entry for this day (no duplicates)
+      const updatedEntry = {
+        ...moods[existingIndex],
+        mood,
+        intensity: Number(intensity),
+        note,
+        updatedAt: new Date().toISOString()
+      };
+      updatedList = [...moods];
+      updatedList[existingIndex] = updatedEntry;
+      showToast(`Today's mood updated to ${mood}!`, 'success');
+    } else {
+      // Create new daily mood
+      const newEntry = {
+        id: 'mood-' + Date.now(),
+        date: targetDate,
+        mood,
+        intensity: Number(intensity),
+        note,
+        createdAt: new Date().toISOString()
+      };
+      updatedList = [newEntry, ...moods];
+      showToast(`Mood check-in recorded! ✨`, 'success');
+    }
+    setMoods(updatedList);
+  };
+
+  const deleteMood = (id) => {
+    setMoods((prev) => prev.filter((m) => m.id !== id));
+    showToast('Mood entry removed', 'info');
+  };
+
+  // JOURNAL ACTIONS
+  const addJournalEntry = (entry) => {
+    const newEntry = {
+      id: 'journal-' + Date.now(),
+      title: entry.title.trim() || 'Untitled Journal Note',
+      content: entry.content || '',
+      mood: entry.mood || 'calm',
+      date: entry.date || getTodayDateStr(),
+      paperStyle: entry.paperStyle || 'lined',
+      washiTape: entry.washiTape || 'peach',
+      sticker: entry.sticker || '✨',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setJournalEntries((prev) => [newEntry, ...prev]);
+    showToast('Journal page added to your scrapbook! 📖', 'success');
+    return newEntry;
+  };
+
+  const updateJournalEntry = (id, updatedFields) => {
+    setJournalEntries((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              ...updatedFields,
+              updatedAt: new Date().toISOString()
+            }
+          : item
+      )
+    );
+    showToast('Journal entry updated!', 'success');
+  };
+
+  const deleteJournalEntry = (id) => {
+    setJournalEntries((prev) => prev.filter((item) => item.id !== id));
+    showToast('Journal entry removed from scrapbook', 'info');
+  };
+
+  // MOODBOARD ACTIONS
+  const createMoodboard = (title, description = '') => {
+    const newBoard = {
+      id: 'board-' + Date.now(),
+      title: title.trim() || 'Untitled Moodboard',
+      description: description.trim(),
+      createdAt: new Date().toISOString(),
+      cards: []
+    };
+    setMoodboards((prev) => [newBoard, ...prev]);
+    showToast(`Created moodboard "${newBoard.title}"`, 'success');
+    return newBoard;
+  };
+
+  const deleteMoodboard = (boardId) => {
+    setMoodboards((prev) => prev.filter((b) => b.id !== boardId));
+    showToast('Moodboard deleted', 'info');
+  };
+
+  const addCardToMoodboard = (boardId, cardData) => {
+    const newCard = {
+      id: 'card-' + Date.now(),
+      type: cardData.type || 'note',
+      title: cardData.title || '',
+      content: cardData.content || '',
+      imageUrl: cardData.imageUrl || null,
+      color: cardData.color || null,
+      createdAt: new Date().toISOString()
+    };
+
+    setMoodboards((prev) =>
+      prev.map((b) => {
+        if (b.id === boardId) {
+          return {
+            ...b,
+            cards: [newCard, ...b.cards]
+          };
+        }
+        return b;
+      })
+    );
+    showToast('Card pinned to moodboard! 📌', 'success');
+  };
+
+  const deleteCardFromMoodboard = (boardId, cardId) => {
+    setMoodboards((prev) =>
+      prev.map((b) => {
+        if (b.id === boardId) {
+          return {
+            ...b,
+            cards: b.cards.filter((c) => c.id !== cardId)
+          };
+        }
+        return b;
+      })
+    );
+    showToast('Card removed from moodboard', 'info');
+  };
+
+  const moveCard = (boardId, cardId, direction) => {
+    setMoodboards((prev) =>
+      prev.map((b) => {
+        if (b.id !== boardId) return b;
+        const index = b.cards.findIndex((c) => c.id === cardId);
+        if (index === -1) return b;
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= b.cards.length) return b;
+
+        const newCards = [...b.cards];
+        const [movedCard] = newCards.splice(index, 1);
+        newCards.splice(targetIndex, 0, movedCard);
+
+        return {
+          ...b,
+          cards: newCards
+        };
+      })
+    );
+  };
+
+  // DEMO DATA CONTROLS
+  const loadDemoData = () => {
+    setMoods(INITIAL_MOODS);
+    setJournalEntries(INITIAL_JOURNAL_ENTRIES);
+    setMoodboards(INITIAL_MOODBOARDS);
+    showToast('Sample scrapbook data loaded! ✨', 'success');
+  };
+
+  const clearAllData = () => {
+    setMoods([]);
+    setJournalEntries([]);
+    setMoodboards([]);
+    showToast('All journal entries and moodboards cleared', 'info');
+  };
+
+  return (
+    <MoodContext.Provider
+      value={{
+        moods,
+        journalEntries,
+        moodboards,
+        toasts,
+        showToast,
+        removeToast,
+        confirmModalConfig,
+        confirmAction,
+        getTodayDateStr,
+        getMoodForDate,
+        getTodayMood,
+        saveMood,
+        deleteMood,
+        addJournalEntry,
+        updateJournalEntry,
+        deleteJournalEntry,
+        createMoodboard,
+        deleteMoodboard,
+        addCardToMoodboard,
+        deleteCardFromMoodboard,
+        moveCard,
+        loadDemoData,
+        clearAllData
+      }}
+    >
+      {children}
+    </MoodContext.Provider>
+  );
+};
+
+export const useMood = () => {
+  const context = useContext(MoodContext);
+  if (!context) {
+    throw new Error('useMood must be used within a MoodProvider');
+  }
+  return context;
+};
