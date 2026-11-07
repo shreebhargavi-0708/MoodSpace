@@ -1,0 +1,61 @@
+/* Gentle organic animations */
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(0.5deg);
+  }
+}
+
+.float-slow {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+/* Subtle scrapbook rotations */
+.rotate-slight-left {
+  transform: rotate(-1.5deg);
+}
+
+.rotate-slight-right {
+  transform: rotate(1.5deg);
+}
+
+.rotate-card-alt:nth-child(even) {
+  transform: rotate(1deg);
+}
+
+.rotate-card-alt:nth-child(3n) {
+  transform: rotate(-1.2deg);
+}
+
+.rotate-card-alt:hover {
+  transform: rotate(0deg) scale(1.01) translateY(-3px) !important;
+}
+
+/* Shimmer pulse for stickers */
+@keyframes stickerPop {
+  0% { transform: scale(0.8) rotate(-10deg); opacity: 0; }
+  70% { transform: scale(1.1) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.animate-pop {
+  animation: stickerPop 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Page entrance transition */
+.page-fade-in {
+  animation: pageFadeIn 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
