@@ -1,0 +1,63 @@
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { Home, Sun, BookOpen, LayoutGrid, Calendar, Sparkles } from 'lucide-react';
+
+export default function BottomNav() {
+  const navItems = [
+    { to: '/', label: 'Home', icon: Home },
+    { to: '/check-in', label: 'Check-in', icon: Sun },
+    { to: '/journal', label: 'Journal', icon: BookOpen },
+    { to: '/moodboards', label: 'Boards', icon: LayoutGrid },
+    { to: '/calendar', label: 'Calendar', icon: Calendar },
+    { to: '/insights', label: 'Insights', icon: Sparkles }
+  ];
+
+  return (
+    <nav
+      className="mobile-bottom-nav"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 'var(--mobile-nav-height)',
+        backgroundColor: 'rgba(255, 253, 249, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderTop: '1px solid var(--border-paper)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        zIndex: 50,
+        padding: '0 0.5rem'
+      }}
+    >
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            style={({ isActive }) => ({
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '2px',
+              textDecoration: 'none',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-sm)',
+              color: isActive ? 'var(--peach-deep)' : 'var(--text-muted)',
+              fontWeight: isActive ? 600 : 500,
+              fontSize: '0.72rem',
+              transition: 'all var(--transition-fast)'
+            })}
+          >
+            <Icon size={19} />
+            <span>{item.label}</span>
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+}
